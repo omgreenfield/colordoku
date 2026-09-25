@@ -17,7 +17,7 @@ import { generatePuzzle } from './game/generator.js';
 import { getHint } from './game/hints.js';
 import { UndoHistory } from './game/history.js';
 import { randomSeed } from './game/random.js';
-import { addResult, emptyRecord, parseRecord } from './game/record.js';
+import { emptyRecord, parseRecord } from './game/record.js';
 import { DEFAULT_SIZE, SIZES, cellKey } from './game/rules.js';
 import { Board } from './ui/board.js';
 import { requireElement } from './ui/dom.js';
@@ -32,7 +32,14 @@ import {
 import { renderRecord } from './ui/record-card.js';
 import { createSounds } from './ui/sounds.js';
 import { renderStatus } from './ui/status.js';
-import { RECORD_KEY, SETTINGS_KEY, parseSettings, readStored, writeStored } from './ui/storage.js';
+import {
+  RECORD_KEY,
+  SETTINGS_KEY,
+  parseSettings,
+  readStored,
+  saveResult,
+  writeStored,
+} from './ui/storage.js';
 import { showToast } from './ui/toast.js';
 import { puzzleSearch, readPuzzleParams, sharePuzzle } from './ui/url.js';
 
@@ -253,8 +260,7 @@ function finishAttempt(won) {
   pendingHint = null;
   renderHint(null);
   const score = won ? scoreFor(puzzle.size, attempt.livesLeft, attempt.livesStart) : 0;
-  record = addResult(record, { won, score });
-  writeStored(RECORD_KEY, record);
+  record = saveResult({ won, score });
   renderRecord(record);
   showToast(won ? `Solved! +${score} points.` : 'Out of lives. The solution is shown.');
 }
@@ -408,10 +414,12 @@ function setMode(next) {
   );
 }
 
+/** Shows whether sound is on in the sound button's label. */
 function renderSoundButton() {
   soundLabel.textContent = sounds.muted ? 'Sound off' : 'Sound on';
 }
 
+/** Turns sound on or off, remembers the choice, and plays a tick when sound comes on. */
 function toggleSound() {
   sounds.setMuted(!sounds.muted);
   settings.muted = sounds.muted;
@@ -420,6 +428,7 @@ function toggleSound() {
   sounds.play('cross');
 }
 
+/** Shares the puzzle link, or copies it when the browser can't share. */
 async function share() {
   if (!puzzle) return;
   const message = await sharePuzzle(window.location.href, puzzle.size);
@@ -486,6 +495,27 @@ requireElement('#reset-record', HTMLButtonElement).addEventListener('click', () 
   record = emptyRecord();
   writeStored(RECORD_KEY, record);
   renderRecord(record);
+});
+
+// Board sounds play on pointerdown, which Safari doesn't count as a gesture for touch, so wake the
+// audio on the gestures it does count.
+for (const type of ['pointerup', 'touchend', 'keydown']) {
+  document.addEventListener(type, () => sounds.unlock(), { capture: true });
+}
+
+// Another tab saved a result or changed a setting: show it here too, so this tab never saves stale
+// settings over it. A null key means storage was cleared.
+window.addEventListener('storage', (event) => {
+  if (event.key === null || event.key === RECORD_KEY) {
+    record = parseRecord(readStored(RECORD_KEY));
+    renderRecord(record);
+  }
+  if (event.key === null || event.key === SETTINGS_KEY) {
+    Object.assign(settings, parseSettings(readStored(SETTINGS_KEY)));
+    livesSelect.value = String(settings.lives);
+    sounds.setMuted(settings.muted);
+    renderSoundButton();
+  }
 });
 
 renderRecord(record);

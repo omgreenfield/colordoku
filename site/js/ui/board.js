@@ -174,7 +174,7 @@ export class Board {
     const cell = this.#cellAt(event.target);
     if (!cell) return;
     event.preventDefault();
-    this.#handlers.onMarkRequest(cellOf(cell));
+    if (!isLongPress(event)) this.#handlers.onMarkRequest(cellOf(cell));
   }
 
   /** @param {KeyboardEvent} event */
@@ -232,6 +232,18 @@ export class Board {
     const cell = target instanceof Element ? target.closest('.cell') : null;
     return cell instanceof HTMLButtonElement && this.#element.contains(cell) ? cell : null;
   }
+}
+
+/**
+ * Whether a context menu event came from holding a finger or pen still. Android opens the context
+ * menu on a long press, and treating that as a right-click would place a mark and could cost a life.
+ *
+ * @param {object} event
+ * @returns {boolean}
+ */
+export function isLongPress(event) {
+  const type = 'pointerType' in event ? event.pointerType : '';
+  return type === 'touch' || type === 'pen';
 }
 
 /**

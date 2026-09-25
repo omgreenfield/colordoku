@@ -4,16 +4,21 @@ import { createSounds } from '../site/js/ui/sounds.js';
 
 /**
  * A stand-in AudioContext that records the starting frequency of every tone.
+ *
+ * @param {'running' | 'suspended'} [state]
  */
-function fakeAudio() {
+function fakeAudio(state = 'running') {
   /** @type {number[]} */
   const tones = [];
   let created = 0;
+  let resumed = 0;
   const context = {
     currentTime: 0,
-    state: 'running',
+    state,
     destination: {},
-    resume() {},
+    resume() {
+      resumed++;
+    },
     createGain: () => ({
       gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} },
       connect: (/** @type {unknown} */ node) => node,
@@ -33,7 +38,7 @@ function fakeAudio() {
     created++;
     return /** @type {AudioContext} */ (/** @type {unknown} */ (context));
   };
-  return { tones, createContext, created: () => created };
+  return { tones, createContext, created: () => created, resumed: () => resumed };
 }
 
 test('sounds play the previewed tones', () => {
@@ -80,4 +85,20 @@ test('drag ticks closer than 40 ms apart are dropped', () => {
 test('sounds do nothing without Web Audio', () => {
   const sounds = createSounds({ muted: false, createContext: () => null });
   assert.doesNotThrow(() => sounds.play('win'));
+});
+
+test('unlock wakes a suspended context without playing anything', () => {
+  const audio = fakeAudio('suspended');
+  const sounds = createSounds({ muted: false, createContext: audio.createContext });
+  sounds.unlock();
+  assert.equal(audio.created(), 1);
+  assert.equal(audio.resumed(), 1);
+  assert.deepEqual(audio.tones, []);
+});
+
+test('unlock leaves audio alone while muted', () => {
+  const audio = fakeAudio('suspended');
+  const sounds = createSounds({ muted: true, createContext: audio.createContext });
+  sounds.unlock();
+  assert.equal(audio.created(), 0);
 });

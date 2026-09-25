@@ -59,6 +59,17 @@ export function createSounds({
   let isMuted = muted;
   let lastTick = -Infinity;
 
+  /**
+   * The audio context, created on first use and resumed if the browser suspended it.
+   *
+   * @returns {AudioContext | null} `null` without Web Audio
+   */
+  const wake = () => {
+    if (context === undefined) context = createContext();
+    if (context?.state === 'suspended') void context.resume();
+    return context;
+  };
+
   return {
     /** @param {SoundName} name */
     play(name) {
@@ -68,10 +79,16 @@ export function createSounds({
         if (time - lastTick < TICK_GAP_MS) return;
         lastTick = time;
       }
-      if (context === undefined) context = createContext();
-      if (!context) return;
-      if (context.state === 'suspended') void context.resume();
-      for (const [frequency, options] of SOUNDS[name]) playTone(context, frequency, options);
+      const audio = wake();
+      if (!audio) return;
+      for (const [frequency, options] of SOUNDS[name]) playTone(audio, frequency, options);
+    },
+    /**
+     * Starts the audio from inside a user gesture. Safari only lets audio start there, and a touch
+     * counts when it ends, after the board has already played its sound on pointerdown.
+     */
+    unlock() {
+      if (!isMuted) wake();
     },
     /** @param {boolean} next */
     setMuted(next) {
