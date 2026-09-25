@@ -60,6 +60,27 @@ export function touches(first, second) {
 }
 
 /**
+ * Cells on the straight line after `from` up to and including `to`, so a fast drag that skips
+ * cells between two pointer events still visits every cell it passed over.
+ *
+ * @param {Cell} from
+ * @param {Cell} to
+ * @returns {Cell[]}
+ */
+export function cellsBetween(from, to) {
+  const [fromRow, fromColumn] = from;
+  const [toRow, toColumn] = to;
+  const steps = Math.max(Math.abs(toRow - fromRow), Math.abs(toColumn - fromColumn));
+  return Array.from({ length: steps }, (_, index) => {
+    const progress = (index + 1) / steps;
+    return [
+      Math.round(fromRow + (toRow - fromRow) * progress),
+      Math.round(fromColumn + (toColumn - fromColumn) * progress),
+    ];
+  });
+}
+
+/**
  * Whether marks on two different cells break a rule: same row, column, or region, or touching.
  *
  * @param {number[][]} regions

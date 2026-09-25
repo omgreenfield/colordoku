@@ -4,6 +4,7 @@ import {
   REGION_NAMES,
   SIZES,
   cellKey,
+  cellsBetween,
   conflictingMarks,
   marksConflict,
   parseKey,
@@ -47,4 +48,22 @@ test('conflictingMarks returns both marks of each conflicting pair', () => {
 
 test('there is a region name for every region on the largest board', () => {
   assert.equal(REGION_NAMES.length, Math.max(...SIZES));
+});
+
+test('cellsBetween fills every cell a fast drag skipped', () => {
+  assert.deepEqual(cellsBetween([6, 0], [6, 3]), [
+    [6, 1],
+    [6, 2],
+    [6, 3],
+  ]);
+  assert.deepEqual(cellsBetween([0, 0], [2, 2]), [
+    [1, 1],
+    [2, 2],
+  ]);
+  assert.deepEqual(cellsBetween([3, 3], [0, 2]), [
+    [2, 3],
+    [1, 2],
+    [0, 2],
+  ]);
+  assert.deepEqual(cellsBetween([4, 4], [4, 5]), [[4, 5]]);
 });

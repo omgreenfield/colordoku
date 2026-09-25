@@ -1,0 +1,56 @@
+/*
+ * Theme tokens. The --region-N colors follow REGION_NAMES in js/game/rules.js:
+ * red, blue, green, yellow, purple, orange, teal, gray, pink.
+ */
+:root {
+  color-scheme: light dark;
+  --bg: #fff;
+  --panel: #f9f8f7;
+  --panel2: #f0efed;
+  --text: #2c2c2b;
+  --muted: #6f6c67;
+  --border: #d8d6d2;
+  --accent: #2783de;
+  --accent-soft: #e5f2fc;
+  --good: #327c55;
+  --good-soft: #e8f1ec;
+  --bad: #b84840;
+  --bad-soft: #fce9e7;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --region-0: #f5b7b1;
+  --region-1: #aed6f1;
+  --region-2: #a9dfbf;
+  --region-3: #f9e79f;
+  --region-4: #d2b4de;
+  --region-5: #f5cba7;
+  --region-6: #a3e4d7;
+  --region-7: #d7dbdd;
+  --region-8: #f8bbd0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191919;
+    --panel: #202020;
+    --panel2: #2a2a29;
+    --text: #fff;
+    --muted: rgba(255, 255, 255, 0.65);
+    --border: rgba(255, 255, 255, 0.2);
+    --accent: #5e9fe8;
+    --accent-soft: #223548;
+    --good: #72bc8f;
+    --good-soft: #21362a;
+    --bad: #e97366;
+    --bad-soft: #422725;
+    --shadow: none;
+    --region-0: #6f3e3a;
+    --region-1: #31536b;
+    --region-2: #376149;
+    --region-3: #6b5a2c;
+    --region-4: #58456c;
+    --region-5: #6b4c35;
+    --region-6: #34615c;
+    --region-7: #55585b;
+    --region-8: #6b3d51;
+  }
+}

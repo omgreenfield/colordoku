@@ -1,0 +1,230 @@
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--panel);
+}
+
+.card h2 {
+  font-size: 17px;
+  margin: 0 0 12px;
+}
+
+.status {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.status-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.status strong {
+  display: block;
+}
+
+.status span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 2px;
+}
+
+.status.good .status-icon {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.status.bad .status-icon {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
+
+.mode-grid,
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.action-grid button:last-child {
+  grid-column: 1 / -1;
+}
+
+.input-help {
+  margin: 11px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.shortcuts {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.shortcuts li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shortcuts .keys {
+  display: inline-flex;
+  gap: 3px;
+  min-width: 108px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .shortcuts {
+    display: none;
+  }
+}
+
+.hint-list {
+  display: grid;
+  gap: 8px;
+}
+
+.hint-button {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hint-button .icon {
+  width: 27px;
+  text-align: center;
+  font-size: 19px;
+}
+
+.hint-button small {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.rules {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.rules li + li {
+  margin-top: 5px;
+}
+
+.kbd {
+  font:
+    12px/1.2 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 2px 5px;
+  background: var(--bg);
+}
+
+.hint-panel {
+  display: none;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: var(--accent-soft);
+}
+
+.hint-panel.show {
+  display: block;
+}
+
+.hint-panel p {
+  margin: 0 0 12px;
+}
+
+.hint-panel .targets {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.hint-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* :not(.primary) keeps the Apply button's accent background. */
+.hint-actions button:not(.primary) {
+  background: var(--bg);
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 12px);
+  opacity: 0;
+  pointer-events: none;
+  background: var(--text);
+  color: var(--bg);
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  transition: 0.18s ease;
+  z-index: 10;
+  max-width: min(90vw, 620px);
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: none;
+  place-items: center;
+  background: color-mix(in srgb, var(--panel) 84%, transparent);
+  z-index: 5;
+}
+
+.loading.show {
+  display: grid;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

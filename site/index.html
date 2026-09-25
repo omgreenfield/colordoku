@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Colordoku</title>
+    <meta
+      name="description"
+      content="A color-region logic puzzle. Place one mark in every row, column, and color, and never let two marks touch."
+    />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#191919" media="(prefers-color-scheme: dark)" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Colordoku" />
+    <meta property="og:title" content="Colordoku" />
+    <meta
+      property="og:description"
+      content="One mark per row, column, and color. Marks can’t touch. A fresh logic puzzle every game."
+    />
+    <meta property="og:url" content="https://omgreenfield.github.io/colordoku/" />
+    <meta
+      property="og:image"
+      content="https://omgreenfield.github.io/colordoku/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="The Colordoku logo beside a colorful puzzle board in progress"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/board.css" />
+    <link rel="stylesheet" href="css/panels.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-hidden="true"></div>
+          <div>
+            <h1>Colordoku</h1>
+            <p>One mark per row, column, and color. Marks cannot touch.</p>
+          </div>
+        </div>
+        <div class="new-controls">
+          <label for="size">Board</label>
+          <select id="size" autocomplete="off">
+            <option value="6">6 × 6</option>
+            <option value="7" selected>7 × 7</option>
+            <option value="8">8 × 8</option>
+            <option value="9">9 × 9</option>
+          </select>
+          <button id="new-game" class="primary" type="button">New game</button>
+        </div>
+      </header>
+      <main class="main">
+        <section class="board-card" aria-label="Game board">
+          <div class="board-wrap">
+            <div id="board" class="board" role="grid" aria-label="Colordoku board"></div>
+            <div id="loading" class="loading" aria-live="polite">
+              <div class="spinner"></div>
+              <span class="sr-only">Generating puzzle</span>
+            </div>
+          </div>
+          <p id="puzzle-caption" class="puzzle-caption"></p>
+        </section>
+        <aside class="side">
+          <section class="card">
+            <div id="status" class="status" aria-live="polite">
+              <div id="status-icon" class="status-icon" aria-hidden="true">i</div>
+              <div>
+                <strong id="status-title">Ready</strong>
+                <span id="status-text">Cross off impossible squares, then place marks.</span>
+              </div>
+            </div>
+          </section>
+          <section class="card">
+            <h2>Input</h2>
+            <div class="mode-grid">
+              <button class="mode-button" type="button" data-mode="cross" aria-pressed="true">
+                × Cross off
+              </button>
+              <button class="mode-button" type="button" data-mode="mark" aria-pressed="false">
+                ● Place mark
+              </button>
+            </div>
+            <p class="input-help">
+              Drag to cross off. Double-click, double-tap, or right-click to place a mark.
+            </p>
+            <ul class="shortcuts" aria-label="Keyboard shortcuts">
+              <li>
+                <span class="keys"
+                  ><span class="kbd">←</span><span class="kbd">↑</span><span class="kbd">↓</span
+                  ><span class="kbd">→</span></span
+                >
+                Move
+              </li>
+              <li>
+                <span class="keys"><span class="kbd">Space</span> <span class="kbd">X</span></span>
+                Cross off
+              </li>
+              <li>
+                <span class="keys"><span class="kbd">Enter</span> <span class="kbd">M</span></span>
+                Place mark
+              </li>
+              <li>
+                <span class="keys"><span class="kbd">⌘/Ctrl</span> <span class="kbd">Z</span></span>
+                Undo
+              </li>
+            </ul>
+          </section>
+          <section class="card">
+            <h2>Game</h2>
+            <div class="action-grid">
+              <button id="undo" type="button" disabled>↶ Undo</button>
+              <button id="redo" type="button" disabled>↷ Redo</button>
+              <button id="restart" type="button">Restart</button>
+              <button id="check" type="button">Check</button>
+              <button id="share" type="button">Share puzzle</button>
+            </div>
+          </section>
+          <section class="card">
+            <h2>Hints</h2>
+            <div class="hint-list">
+              <button class="hint-button" type="button" data-hint="mark">
+                <span class="icon" aria-hidden="true">●</span>
+                <span>Mark a square<small>Place one guaranteed mark</small></span>
+              </button>
+              <button class="hint-button" type="button" data-hint="cross">
+                <span class="icon" aria-hidden="true">×3</span>
+                <span>Cross off squares<small>Eliminate up to three</small></span>
+              </button>
+              <button class="hint-button" type="button" data-hint="reason">
+                <span class="icon" aria-hidden="true">💡</span>
+                <span>Explain next step<small>Show a logical deduction</small></span>
+              </button>
+            </div>
+          </section>
+          <section id="hint-panel" class="card hint-panel" aria-live="polite">
+            <h2 id="hint-title">Hint</h2>
+            <p id="hint-text"></p>
+            <p id="hint-targets" class="targets"></p>
+            <div class="hint-actions">
+              <button id="apply-hint" class="primary" type="button">Apply</button>
+              <button id="dismiss-hint" type="button">I’ll do it</button>
+            </div>
+          </section>
+          <section class="card">
+            <h2>Rules</h2>
+            <ul class="rules">
+              <li>Exactly one mark in every row.</li>
+              <li>Exactly one mark in every column.</li>
+              <li>Exactly one mark in every color.</li>
+              <li>Marks cannot touch, even diagonally.</li>
+            </ul>
+          </section>
+        </aside>
+      </main>
+    </div>
+    <div id="toast" class="toast" role="status"></div>
+  </body>
+</html>
