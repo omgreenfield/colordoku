@@ -1,0 +1,37 @@
+{
+  "name": "colordoku",
+  "version": "1.0.0",
+  "description": "A color-region logic puzzle for the browser: one mark per row, column, and color, and marks can't touch.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "Matthew Greenfield",
+  "homepage": "https://omgreenfield.github.io/colordoku/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omgreenfield/colordoku.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "serve site -l 8000 --no-clipboard",
+    "test": "node --test \"test/*.test.js\"",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.json",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test",
+    "images": "node scripts/capture-images.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.6",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "puppeteer-core": "^25.12.0",
+    "serve": "^14.2.6",
+    "typescript": "^7.0.2"
+  }
+}
