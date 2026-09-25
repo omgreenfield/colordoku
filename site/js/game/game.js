@@ -66,3 +66,13 @@ export function setCrossed(state, cells, crossed, skip = new Set()) {
   }
   return next;
 }
+
+/**
+ * Removes every cross-off and keeps every mark.
+ *
+ * @param {BoardState} state
+ * @returns {BoardState}
+ */
+export function clearCrosses(state) {
+  return { crossed: new Set(), marked: new Set(state.marked) };
+}

@@ -12,7 +12,7 @@ import {
   scoreFor,
   startAttempt,
 } from './game/attempt.js';
-import { emptyState, sameState, setCrossed } from './game/game.js';
+import { clearCrosses, emptyState, sameState, setCrossed } from './game/game.js';
 import { generatePuzzle } from './game/generator.js';
 import { getHint } from './game/hints.js';
 import { UndoHistory } from './game/history.js';
@@ -69,6 +69,7 @@ const caption = requireElement('#puzzle-caption', HTMLElement);
 const undoButton = requireElement('#undo', HTMLButtonElement);
 const redoButton = requireElement('#redo', HTMLButtonElement);
 const restartLabel = requireElement('#restart-label', HTMLElement);
+const clearButton = requireElement('#clear-crosses', HTMLButtonElement);
 const soundLabel = requireElement('#sound-label', HTMLElement);
 const modeButtons = /** @type {NodeListOf<HTMLButtonElement>} */ (
   document.querySelectorAll('.mode-button')
@@ -133,6 +134,7 @@ function refresh() {
   });
   undoButton.disabled = locked || !moves.canUndo;
   redoButton.disabled = locked || !moves.canRedo;
+  clearButton.disabled = locked || state.crossed.size === 0;
   restartLabel.textContent = locked ? 'Try again' : 'Restart';
 }
 
@@ -340,6 +342,20 @@ function restart() {
   if (commit(emptyState())) sounds.play('undo');
 }
 
+/** Clears every cross-off as one undo step, keeping marks and mistakes. */
+function clearCrossOffs() {
+  if (!puzzle || attempt.outcome !== 'playing') return;
+  cancelStroke();
+  if (state.crossed.size === 0) {
+    refresh();
+    return;
+  }
+  pendingHint = null;
+  renderHint(null);
+  commit(clearCrosses(state));
+  sounds.play('undo');
+}
+
 /**
  * Generates and shows a puzzle, and puts its size and seed in the address bar.
  *
@@ -426,6 +442,7 @@ const ACTIONS = {
   undo,
   redo,
   restart,
+  clearCrosses: clearCrossOffs,
   check: () => {
     if (puzzle) showToast(checkMessage(puzzle, state, attempt));
   },

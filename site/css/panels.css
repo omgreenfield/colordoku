@@ -75,6 +75,11 @@
   gap: 8px;
 }
 
+/* Seven Game buttons leave the last one alone on its row, so it spans both columns. */
+.action-grid button:last-child {
+  grid-column: 1 / -1;
+}
+
 .mode-button[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent-soft);

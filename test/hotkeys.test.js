@@ -25,6 +25,7 @@ const SHIFT_HOTKEYS = {
   crossMode: 'KeyX',
   markMode: 'KeyP',
   restart: 'KeyR',
+  clearCrosses: 'KeyE',
   check: 'KeyC',
   share: 'KeyS',
   hintMark: 'Digit1',
@@ -78,6 +79,7 @@ test('labels follow the platform', () => {
 test('aria-keyshortcuts values use ARIA key names', () => {
   assert.equal(ariaKeyshortcuts('newGame'), 'Shift+N');
   assert.equal(ariaKeyshortcuts('hintCross'), 'Shift+2');
+  assert.equal(ariaKeyshortcuts('clearCrosses'), 'Shift+E');
   assert.equal(ariaKeyshortcuts('undo'), 'Meta+Z Control+Z');
   assert.equal(ariaKeyshortcuts('redo'), 'Meta+Shift+Z Control+Shift+Z Control+Y');
   assert.equal(ariaKeyshortcuts('dismissHint'), 'Escape');

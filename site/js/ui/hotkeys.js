@@ -2,7 +2,7 @@
  * Every keyboard shortcut outside the board, in one table so button labels and key handling can't
  * drift apart. Plain keys belong to the focused board square; Shift+key triggers a control.
  *
- * @typedef {'newGame' | 'cycleSize' | 'cycleLives' | 'crossMode' | 'markMode' | 'undo' | 'redo' | 'restart' | 'check' | 'share' | 'hintMark' | 'hintCross' | 'hintReason' | 'applyHint' | 'dismissHint' | 'toggleSound'} HotkeyId
+ * @typedef {'newGame' | 'cycleSize' | 'cycleLives' | 'crossMode' | 'markMode' | 'undo' | 'redo' | 'restart' | 'clearCrosses' | 'check' | 'share' | 'hintMark' | 'hintCross' | 'hintReason' | 'applyHint' | 'dismissHint' | 'toggleSound'} HotkeyId
  * @typedef {{ key: string, code: string, shiftKey: boolean, ctrlKey: boolean, metaKey: boolean, altKey: boolean }} KeyLike
  */
 
@@ -18,6 +18,7 @@ const SHIFT_HOTKEYS = [
   ['crossMode', 'KeyX'],
   ['markMode', 'KeyP'],
   ['restart', 'KeyR'],
+  ['clearCrosses', 'KeyE'],
   ['check', 'KeyC'],
   ['share', 'KeyS'],
   ['hintMark', 'Digit1'],

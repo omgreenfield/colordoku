@@ -49,6 +49,7 @@ You start each puzzle with 3 lives (choose 1–5 with the Lives menu). Every wro
 | Cross off many         | Click and drag              | Drag                                    |                                                                                 |
 | Place or remove a mark | Double-click or right-click | Double-tap, or switch to **Place mark** | <kbd>Enter</kbd> or <kbd>M</kbd>                                                |
 | Move between squares   |                             |                                         | Arrow keys, <kbd>Home</kbd>, <kbd>End</kbd>                                     |
+| Clear all cross-offs   | **Clear crosses** button    | **Clear crosses** button                | <kbd>⇧E</kbd>                                                                   |
 | Undo                   | **Undo** button             | **Undo** button                         | <kbd>⌘/Ctrl</kbd> <kbd>Z</kbd>                                                  |
 | Redo                   | **Redo** button             | **Redo** button                         | <kbd>⌘/Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> or <kbd>Ctrl</kbd> <kbd>Y</kbd> |
 
@@ -62,7 +63,8 @@ Every button also has a Shift shortcut, shown on the button itself:
 | <kbd>⇧X</kbd> | Cross off mode       | <kbd>⇧1</kbd>  | Hint: mark a square     |
 | <kbd>⇧P</kbd> | Place mark mode      | <kbd>⇧2</kbd>  | Hint: cross off squares |
 | <kbd>⇧R</kbd> | Restart or try again | <kbd>⇧3</kbd>  | Hint: explain next step |
-| <kbd>⇧A</kbd> | Apply the hint       | <kbd>Esc</kbd> | Close the hint          |
+| <kbd>⇧E</kbd> | Clear all cross-offs | <kbd>⇧A</kbd>  | Apply the hint          |
+|               |                      | <kbd>Esc</kbd> | Close the hint          |
 
 ## Features
 
@@ -73,7 +75,8 @@ Every button also has a Shift shortcut, shown on the button itself:
 - Keyboard shortcuts for every control
 - Shareable puzzle links: every puzzle has a seed in its URL, so `?size=8&seed=k3f9x2` rebuilds the same board on any device
 - Three hints: place a guaranteed mark, cross off up to three squares, or explain the next logical step, with the hint's squares highlighted on the board
-- Undo and redo for every move, including Restart
+- Undo and redo for every move, including Restart and Clear crosses
+- Clear crosses wipes every cross-off in one step and keeps your marks
 - A live status that tells you as soon as a cross-off makes the puzzle impossible
 - Light and dark themes that follow your system
 - Keyboard play and screen reader labels for every square
