@@ -18,4 +18,4 @@ Colordoku is a zero-build browser puzzle. Everything in `site/` is served to Git
 - The `--region-N` colors in `site/css/tokens.css` stay in the same order as `REGION_NAMES` in `site/js/game/rules.js`
 - Changing the generator changes what existing share links produce. That's allowed, but do it on purpose
 - After changing how the site looks, run `npm run images` and commit the new PNGs
-- Every button and select hotkey is defined in `site/js/ui/hotkeys.js`; controls use `data-hotkey` and key chips use `data-hotkey-label`
+- Every button and select hotkey is defined in [site/js/ui/hotkeys.js](site/js/ui/hotkeys.js); controls use `data-hotkey` and key chips use `data-hotkey-label`
