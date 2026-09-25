@@ -1,4 +1,3 @@
-import { setCrossed, toggleMark } from './game.js';
 import { REGION_NAMES, cellKey, marksConflict, parseKey } from './rules.js';
 import { solve } from './solver.js';
 
@@ -29,21 +28,6 @@ export function getHint(puzzle, state, type) {
   if (type === 'cross') return crossHint(puzzle, state, solution);
   const hint = reasonHint(puzzle, state);
   return hint ? { hint } : { message: 'No new logical cross-off found. Try a mark hint.' };
-}
-
-/**
- * Applies a hint to the board. A mark hint whose cell is already marked changes nothing.
- *
- * @param {Puzzle} puzzle
- * @param {BoardState} state
- * @param {Hint} hint
- * @returns {{ state: BoardState } | { message: string }}
- */
-export function applyHint(puzzle, state, hint) {
-  if (hint.action === 'cross') return { state: setCrossed(state, hint.targets, true) };
-  const [target] = hint.targets;
-  if (state.marked.has(cellKey(...target))) return { state };
-  return toggleMark(puzzle, state, target);
 }
 
 /**

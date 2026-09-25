@@ -1,53 +1,88 @@
 /**
- * Colordoku controller: owns the puzzle, board state, undo history, and input mode, and wires up the page.
+ * Colordoku controller: owns the puzzle, board state, attempt, undo history, settings, and record,
+ * and routes clicks and hotkeys through one action table.
  */
 import {
+  LIVES_CHOICES,
+  applyHint,
   checkMessage,
-  emptyState,
+  effectiveState,
   getStatus,
-  sameState,
-  setCrossed,
-  toggleMark,
-} from './game/game.js';
+  markCell,
+  scoreFor,
+  startAttempt,
+} from './game/attempt.js';
+import { emptyState, sameState, setCrossed } from './game/game.js';
 import { generatePuzzle } from './game/generator.js';
-import { applyHint, getHint } from './game/hints.js';
+import { getHint } from './game/hints.js';
 import { UndoHistory } from './game/history.js';
 import { randomSeed } from './game/random.js';
-import { DEFAULT_SIZE, cellKey, conflictingMarks } from './game/rules.js';
+import { addResult, emptyRecord, parseRecord } from './game/record.js';
+import { DEFAULT_SIZE, SIZES, cellKey } from './game/rules.js';
 import { Board } from './ui/board.js';
 import { requireElement } from './ui/dom.js';
 import { renderHint } from './ui/hint-panel.js';
+import {
+  ariaKeyshortcuts,
+  hotkeyLabel,
+  isHotkeyId,
+  isMacPlatform,
+  matchHotkey,
+} from './ui/hotkeys.js';
+import { renderRecord } from './ui/record-card.js';
+import { createSounds } from './ui/sounds.js';
 import { renderStatus } from './ui/status.js';
+import { RECORD_KEY, SETTINGS_KEY, parseSettings, readStored, writeStored } from './ui/storage.js';
 import { showToast } from './ui/toast.js';
 import { puzzleSearch, readPuzzleParams, sharePuzzle } from './ui/url.js';
 
 /**
+ * @typedef {import('./game/attempt.js').MoveEvent} MoveEvent
+ * @typedef {import('./game/attempt.js').MoveResult} MoveResult
  * @typedef {import('./game/rules.js').BoardState} BoardState
  * @typedef {import('./game/rules.js').Cell} Cell
  * @typedef {import('./game/rules.js').Puzzle} Puzzle
  * @typedef {import('./game/hints.js').Hint} Hint
  * @typedef {import('./game/hints.js').HintType} HintType
+ * @typedef {import('./ui/hotkeys.js').HotkeyId} HotkeyId
+ * @typedef {import('./ui/sounds.js').SoundName} SoundName
  */
 
 /** Gives the spinner a frame to paint before generation blocks the main thread. */
 const GENERATE_DELAY_MS = 30;
+const GAME_OVER_TOAST = 'The game is over. Try again or start a new game.';
+
+/** @type {Partial<Record<MoveEvent, SoundName>>} */
+const MOVE_SOUNDS = {
+  placed: 'mark',
+  removed: 'unmark',
+  mistake: 'wrong',
+  won: 'win',
+  lost: 'lose',
+  crossed: 'cross',
+};
 
 const sizeSelect = requireElement('#size', HTMLSelectElement);
+const livesSelect = requireElement('#lives', HTMLSelectElement);
 const loading = requireElement('#loading', HTMLElement);
 const caption = requireElement('#puzzle-caption', HTMLElement);
 const undoButton = requireElement('#undo', HTMLButtonElement);
 const redoButton = requireElement('#redo', HTMLButtonElement);
+const restartLabel = requireElement('#restart-label', HTMLElement);
+const soundLabel = requireElement('#sound-label', HTMLElement);
 const modeButtons = /** @type {NodeListOf<HTMLButtonElement>} */ (
   document.querySelectorAll('.mode-button')
 );
-const hintButtons = /** @type {NodeListOf<HTMLButtonElement>} */ (
-  document.querySelectorAll('.hint-button')
-);
+
+const settings = parseSettings(readStored(SETTINGS_KEY));
+let record = parseRecord(readStored(RECORD_KEY));
+const sounds = createSounds({ muted: settings.muted });
 
 /** @type {Puzzle | null} */
 let puzzle = null;
 /** @type {BoardState} */
 let state = emptyState();
+let attempt = startAttempt(settings.lives);
 const moves = new UndoHistory();
 /** @type {'cross' | 'mark'} */
 let mode = 'cross';
@@ -68,24 +103,37 @@ let lastPress = null;
 
 const board = new Board(requireElement('#board', HTMLElement), {
   onPressStart(cell, double) {
-    if (mode === 'mark') markCell(cell);
+    if (attempt.outcome !== 'playing') return;
+    if (mode === 'mark') markAt(cell);
     else if (double) markFromDoublePress(cell);
     else startStroke(cell);
   },
   onPressMove: continueStroke,
   onPressEnd: endStroke,
-  onMarkRequest: markCell,
+  onMarkRequest: markAt,
   onCrossRequest: crossCell,
 });
 
-/** Redraws everything that depends on the board state. */
+/** Redraws everything that depends on the board state or attempt. */
 function refresh() {
   if (!puzzle) return;
+  const locked = attempt.outcome !== 'playing';
   const hintTargets = new Set(pendingHint?.targets.map(([row, column]) => cellKey(row, column)));
-  board.update(state, { conflicts: conflictingMarks(puzzle.regions, state.marked), hintTargets });
-  renderStatus(getStatus(puzzle, state));
-  undoButton.disabled = !moves.canUndo;
-  redoButton.disabled = !moves.canRedo;
+  const revealed = new Set(
+    attempt.outcome === 'lost'
+      ? puzzle.solution
+          .map((column, row) => cellKey(row, column))
+          .filter((key) => !state.marked.has(key))
+      : [],
+  );
+  board.update(state, { hintTargets, mistakes: attempt.mistakes, revealed, locked });
+  renderStatus(getStatus(puzzle, state, attempt), {
+    left: attempt.livesLeft,
+    start: attempt.livesStart,
+  });
+  undoButton.disabled = locked || !moves.canUndo;
+  redoButton.disabled = locked || !moves.canRedo;
+  restartLabel.textContent = locked ? 'Try again' : 'Restart';
 }
 
 /**
@@ -104,11 +152,23 @@ function commit(next, before = state) {
   return changed;
 }
 
+/**
+ * Crosses or clears one cell during a drag or key press, with a tick when it changes.
+ *
+ * @param {Cell} cell
+ * @param {boolean} crossing
+ */
+function crossOne(cell, crossing) {
+  const next = setCrossed(state, [cell], crossing, attempt.mistakes);
+  if (!sameState(next, state)) sounds.play(crossing ? 'cross' : 'uncross');
+  state = next;
+}
+
 /** @param {Cell} cell */
 function startStroke(cell) {
   const key = cellKey(...cell);
   stroke = { before: state, crossing: !state.crossed.has(key), key, single: true };
-  state = setCrossed(state, [cell], stroke.crossing);
+  crossOne(cell, stroke.crossing);
   refresh();
 }
 
@@ -116,7 +176,7 @@ function startStroke(cell) {
 function continueStroke(cell) {
   if (!stroke) return;
   stroke.single = false;
-  state = setCrossed(state, [cell], stroke.crossing);
+  crossOne(cell, stroke.crossing);
   refresh();
 }
 
@@ -136,18 +196,41 @@ function cancelStroke() {
 }
 
 /** @param {Cell} cell */
-function markCell(cell) {
-  if (!puzzle) return;
-  cancelStroke();
-  const result = toggleMark(puzzle, state, cell);
-  if ('message' in result) {
-    showToast(result.message);
-    refresh();
-  } else commit(result.state);
+function crossCell(cell) {
+  if (attempt.outcome !== 'playing') return;
+  const before = state;
+  crossOne(cell, !state.crossed.has(cellKey(...cell)));
+  commit(state, before);
 }
 
 /**
- * Toggles a mark for a double press, folding the first press's cross-off into the same undo step.
+ * Applies a mark or hint result: the board change becomes one undo step, and the attempt, sounds,
+ * toasts, and record follow the event.
+ *
+ * @param {MoveResult} result
+ * @param {BoardState} [before]
+ */
+function handleMove({ board: next, attempt: nextAttempt, event }, before = state) {
+  attempt = nextAttempt;
+  const sound = MOVE_SOUNDS[event];
+  if (sound) sounds.play(sound);
+  if (event === 'mistake') {
+    const left = attempt.livesLeft;
+    showToast(`Wrong square. ${left} ${left === 1 ? 'life' : 'lives'} left.`);
+  }
+  if (event === 'won' || event === 'lost') finishAttempt(event === 'won');
+  commit(next, before);
+}
+
+/** @param {Cell} cell */
+function markAt(cell) {
+  if (!puzzle || attempt.outcome !== 'playing') return;
+  cancelStroke();
+  handleMove(markCell(puzzle, state, attempt, cell));
+}
+
+/**
+ * Marks a cell for a double press, folding the first press's cross-off into the same undo step.
  *
  * @param {Cell} cell
  */
@@ -155,28 +238,39 @@ function markFromDoublePress(cell) {
   if (!puzzle) return;
   const folds = lastPress !== null && lastPress.key === cellKey(...cell) && lastPress.recorded;
   const before = (folds && moves.discardLast()) || state;
-  const result = toggleMark(puzzle, before, cell);
-  if ('state' in result) {
-    commit(result.state, before);
-    return;
-  }
-  showToast(result.message);
-  state = before;
-  lastPress = null;
-  refresh();
+  handleMove(markCell(puzzle, before, attempt, cell), before);
 }
 
-/** @param {Cell} cell */
-function crossCell(cell) {
-  commit(setCrossed(state, [cell], !state.crossed.has(cellKey(...cell))));
+/**
+ * Records a finished attempt and tells the player.
+ *
+ * @param {boolean} won
+ */
+function finishAttempt(won) {
+  if (!puzzle) return;
+  pendingHint = null;
+  renderHint(null);
+  const score = won ? scoreFor(puzzle.size, attempt.livesLeft, attempt.livesStart) : 0;
+  record = addResult(record, { won, score });
+  writeStored(RECORD_KEY, record);
+  renderRecord(record);
+  showToast(won ? `Solved! +${score} points.` : 'Out of lives. The solution is shown.');
 }
 
 /** @param {HintType} type */
 function requestHint(type) {
   if (!puzzle) return;
-  const result = getHint(puzzle, state, type);
-  if ('message' in result) showToast(result.message);
-  else showHint(result.hint);
+  if (attempt.outcome !== 'playing') {
+    showToast(GAME_OVER_TOAST);
+    return;
+  }
+  const result = getHint(puzzle, effectiveState(state, attempt), type);
+  if ('message' in result) {
+    showToast(result.message);
+    return;
+  }
+  sounds.play('hint');
+  showHint(result.hint);
 }
 
 /** @param {Hint | null} hint */
@@ -188,43 +282,62 @@ function showHint(hint) {
 
 function applyPendingHint() {
   if (!puzzle || !pendingHint) return;
-  const result = applyHint(puzzle, state, pendingHint);
+  cancelStroke();
+  const hint = pendingHint;
   pendingHint = null;
   renderHint(null);
-  if ('message' in result) {
-    showToast(result.message);
-    refresh();
-  } else commit(result.state);
+  handleMove(applyHint(puzzle, state, attempt, hint));
 }
 
 /**
  * Shows a state reached through undo or redo.
  *
  * @param {BoardState} next
+ * @param {SoundName} sound
  */
-function restore(next) {
+function restore(next, sound) {
   state = next;
   lastPress = null;
+  sounds.play(sound);
   showHint(null);
 }
 
 function undo() {
+  if (attempt.outcome !== 'playing') return;
   cancelStroke();
   const previous = moves.undo(state);
-  if (previous) restore(previous);
+  if (previous) restore(previous, 'undo');
 }
 
 function redo() {
+  if (attempt.outcome !== 'playing') return;
   cancelStroke();
   const next = moves.redo(state);
-  if (next) restore(next);
+  if (next) restore(next, 'redo');
 }
 
+/** Starts a fresh attempt at the current puzzle with the current Lives setting. */
+function beginAttempt() {
+  attempt = startAttempt(settings.lives);
+  state = emptyState();
+  moves.clear();
+  stroke = null;
+  lastPress = null;
+  showHint(null);
+}
+
+/** Clears the board while playing, or starts over with full lives once the game is over. */
 function restart() {
+  if (!puzzle) return;
   cancelStroke();
+  if (attempt.outcome !== 'playing') {
+    beginAttempt();
+    sounds.play('newGame');
+    return;
+  }
   pendingHint = null;
   renderHint(null);
-  commit(emptyState());
+  if (commit(emptyState())) sounds.play('undo');
 }
 
 /**
@@ -232,9 +345,10 @@ function restart() {
  *
  * @param {number} size
  * @param {string} seed
- * @param {boolean} [retry] Whether to fall back to a random seed if this one fails
+ * @param {{ retry?: boolean, announce?: boolean }} [options] `retry` falls back to a random seed if
+ *   this one fails; `announce` plays the new-game sound
  */
-function startGame(size, seed, retry = true) {
+function startGame(size, seed, { retry = true, announce = false } = {}) {
   loading.classList.add('show');
   setTimeout(() => {
     const next = generatePuzzle(size, seed);
@@ -242,62 +356,122 @@ function startGame(size, seed, retry = true) {
     if (!next) {
       if (retry) {
         showToast('Generator got a hairball. Here’s a fresh puzzle instead.');
-        startGame(size, randomSeed(), false);
+        startGame(size, randomSeed(), { retry: false, announce });
       } else showToast('Generator got a hairball. Try again.');
       return;
     }
     puzzle = next;
-    state = emptyState();
-    moves.clear();
-    stroke = null;
-    lastPress = null;
     sizeSelect.value = String(size);
     caption.textContent = `Puzzle ${seed} · ${size}×${size}`;
     window.history.replaceState(null, '', puzzleSearch(size, seed));
     board.setPuzzle(next);
-    showHint(null);
+    beginAttempt();
+    if (announce) sounds.play('newGame');
   }, GENERATE_DELAY_MS);
 }
 
-modeButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    mode = button.dataset.mode === 'mark' ? 'mark' : 'cross';
-    modeButtons.forEach((other) => other.setAttribute('aria-pressed', String(other === button)));
-  });
-});
+/**
+ * Selects the next choice in a select, wrapping around.
+ *
+ * @param {HTMLSelectElement} select
+ * @param {number[]} choices
+ * @returns {number} The new value
+ */
+function cycleSelect(select, choices) {
+  const next = choices[(choices.indexOf(Number(select.value)) + 1) % choices.length];
+  select.value = String(next);
+  select.dispatchEvent(new Event('change'));
+  return next;
+}
 
-hintButtons.forEach((button) => {
-  button.addEventListener('click', () => {
-    const type = button.dataset.hint;
-    if (type === 'mark' || type === 'cross' || type === 'reason') requestHint(type);
-  });
-});
+/** @param {'cross' | 'mark'} next */
+function setMode(next) {
+  mode = next;
+  modeButtons.forEach((button) =>
+    button.setAttribute('aria-pressed', String(button.dataset.mode === next)),
+  );
+}
 
-requireElement('#new-game', HTMLButtonElement).addEventListener('click', () =>
-  startGame(Number(sizeSelect.value), randomSeed()),
-);
-requireElement('#restart', HTMLButtonElement).addEventListener('click', restart);
-requireElement('#check', HTMLButtonElement).addEventListener('click', () => {
-  if (puzzle) showToast(checkMessage(puzzle, state));
-});
-requireElement('#share', HTMLButtonElement).addEventListener('click', async () => {
+function renderSoundButton() {
+  soundLabel.textContent = sounds.muted ? 'Sound off' : 'Sound on';
+}
+
+function toggleSound() {
+  sounds.setMuted(!sounds.muted);
+  settings.muted = sounds.muted;
+  writeStored(SETTINGS_KEY, settings);
+  renderSoundButton();
+  sounds.play('cross');
+}
+
+async function share() {
   if (!puzzle) return;
   const message = await sharePuzzle(window.location.href, puzzle.size);
   if (message) showToast(message);
+}
+
+/** @type {Record<HotkeyId, () => void>} */
+const ACTIONS = {
+  newGame: () => startGame(Number(sizeSelect.value), randomSeed(), { announce: true }),
+  cycleSize: () => {
+    const size = cycleSelect(sizeSelect, SIZES);
+    showToast(`Next game: ${size}×${size}.`);
+  },
+  cycleLives: () => {
+    const lives = cycleSelect(livesSelect, LIVES_CHOICES);
+    showToast(`Next game: ${lives} ${lives === 1 ? 'life' : 'lives'}.`);
+  },
+  crossMode: () => setMode('cross'),
+  markMode: () => setMode('mark'),
+  undo,
+  redo,
+  restart,
+  check: () => {
+    if (puzzle) showToast(checkMessage(puzzle, state, attempt));
+  },
+  share: () => void share(),
+  hintMark: () => requestHint('mark'),
+  hintCross: () => requestHint('cross'),
+  hintReason: () => requestHint('reason'),
+  applyHint: applyPendingHint,
+  dismissHint: () => showHint(null),
+  toggleSound,
+};
+
+const isMac = isMacPlatform(navigator);
+document.querySelectorAll('[data-hotkey-label]').forEach((chip) => {
+  const id = chip instanceof HTMLElement ? chip.dataset.hotkeyLabel : undefined;
+  if (isHotkeyId(id)) chip.textContent = hotkeyLabel(id, isMac);
 });
-requireElement('#apply-hint', HTMLButtonElement).addEventListener('click', applyPendingHint);
-requireElement('#dismiss-hint', HTMLButtonElement).addEventListener('click', () => showHint(null));
-undoButton.addEventListener('click', undo);
-redoButton.addEventListener('click', redo);
+document.querySelectorAll('[data-hotkey]').forEach((control) => {
+  const id = control instanceof HTMLElement ? control.dataset.hotkey : undefined;
+  if (!isHotkeyId(id)) return;
+  control.setAttribute('aria-keyshortcuts', ariaKeyshortcuts(id));
+  if (control instanceof HTMLButtonElement) control.addEventListener('click', () => ACTIONS[id]());
+});
 
 document.addEventListener('keydown', (event) => {
-  if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
-  const key = event.key.toLowerCase();
-  if (key === 'z' && !event.shiftKey) undo();
-  else if ((key === 'z' && event.shiftKey) || (key === 'y' && event.ctrlKey)) redo();
-  else return;
+  const id = matchHotkey(event);
+  if (!id) return;
+  if ((id === 'applyHint' || id === 'dismissHint') && !pendingHint) return;
   event.preventDefault();
+  if (event.repeat && id !== 'undo' && id !== 'redo') return;
+  ACTIONS[id]();
 });
 
+livesSelect.value = String(settings.lives);
+livesSelect.addEventListener('change', () => {
+  settings.lives = Number(livesSelect.value);
+  writeStored(SETTINGS_KEY, settings);
+});
+requireElement('#reset-record', HTMLButtonElement).addEventListener('click', () => {
+  if (!confirm('Reset your wins, losses, and scores in this browser?')) return;
+  record = emptyRecord();
+  writeStored(RECORD_KEY, record);
+  renderRecord(record);
+});
+
+renderRecord(record);
+renderSoundButton();
 const params = readPuzzleParams(window.location.search);
 startGame(params.size ?? DEFAULT_SIZE, params.seed ?? randomSeed());

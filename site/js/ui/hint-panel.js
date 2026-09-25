@@ -16,7 +16,7 @@ export function renderHint(hint) {
   requireElement('#hint-targets', HTMLElement).textContent = hint.targets
     .map(([row, column]) => `R${row + 1}C${column + 1}`)
     .join(' · ');
-  requireElement('#apply-hint', HTMLElement).textContent =
+  requireElement('#apply-hint-label', HTMLElement).textContent =
     hint.action === 'mark' ? 'Place mark' : `Cross off ${hint.targets.length}`;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   panel.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'nearest' });

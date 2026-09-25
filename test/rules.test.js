@@ -5,7 +5,6 @@ import {
   SIZES,
   cellKey,
   cellsBetween,
-  conflictingMarks,
   marksConflict,
   parseKey,
   touches,
@@ -36,14 +35,6 @@ test('marksConflict covers every rule', () => {
   assert.equal(marksConflict(REGIONS, [0, 2], [2, 3]), true, 'same region');
   assert.equal(marksConflict(REGIONS, [2, 0], [3, 1]), true, 'touching');
   assert.equal(marksConflict(REGIONS, [0, 1], [1, 3]), false, 'no rule broken');
-});
-
-test('conflictingMarks returns both marks of each conflicting pair', () => {
-  assert.deepEqual(conflictingMarks(REGIONS, ['0,1', '1,3', '2,0']), new Set());
-  assert.deepEqual(
-    conflictingMarks(REGIONS, ['0,1', '1,3', '0,3']),
-    new Set(['0,1', '0,3', '1,3']),
-  );
 });
 
 test('there is a region name for every region on the largest board', () => {

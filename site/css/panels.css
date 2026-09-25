@@ -32,11 +32,30 @@
   display: block;
 }
 
-.status span {
+.status .status-text {
   display: block;
   color: var(--muted);
   font-size: 14px;
   margin-top: 2px;
+}
+
+.status-body {
+  flex: 1;
+}
+
+.lives {
+  font-size: 18px;
+  line-height: 28px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+.heart {
+  color: var(--bad);
+}
+
+.heart.spent {
+  color: var(--muted);
 }
 
 .status.good .status-icon {
@@ -60,10 +79,6 @@
   border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent);
-}
-
-.action-grid button:last-child {
-  grid-column: 1 / -1;
 }
 
 .input-help {
@@ -227,4 +242,101 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+.hotkey {
+  margin-left: 6px;
+  padding: 2px 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font:
+    500 11px/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  color: var(--muted);
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
+.primary .hotkey {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.mode-button[aria-pressed='true'] .hotkey {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.hint-button .hotkey {
+  margin-left: auto;
+}
+
+/* In narrow two-column layouts a chip drops below its label whole instead of splitting the label. */
+.mode-button,
+.action-grid button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 6px;
+}
+
+.mode-button .hotkey,
+.action-grid .hotkey {
+  margin-left: 0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .hotkey {
+    display: none;
+  }
+}
+
+.record-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.record-grid div {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.record-grid dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.record-grid dd {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.record-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.record-footer strong {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.record-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
 }

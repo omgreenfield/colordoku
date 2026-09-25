@@ -1,11 +1,8 @@
-import { cellKey, conflictingMarks } from './rules.js';
-import { solve } from './solver.js';
+import { cellKey } from './rules.js';
 
 /**
  * @typedef {import('./rules.js').BoardState} BoardState
  * @typedef {import('./rules.js').Cell} Cell
- * @typedef {import('./rules.js').Puzzle} Puzzle
- * @typedef {{ kind: 'ready' | 'progress' | 'impossible' | 'solved', title: string, text: string }} Status
  */
 
 /**
@@ -68,78 +65,4 @@ export function setCrossed(state, cells, crossed, skip = new Set()) {
     else next.crossed.delete(key);
   }
   return next;
-}
-
-/**
- * Removes the mark on a cell, or places one there when the rules allow it.
- *
- * @param {Puzzle} puzzle
- * @param {BoardState} state
- * @param {Cell} cell
- * @returns {{ state: BoardState } | { message: string }}
- */
-export function toggleMark(puzzle, state, cell) {
-  const key = cellKey(...cell);
-  const next = cloneState(state);
-  if (next.marked.delete(key)) return { state: next };
-  next.crossed.delete(key);
-  next.marked.add(key);
-  if (conflictingMarks(puzzle.regions, next.marked).size > 0) {
-    return { message: 'That mark conflicts with another mark.' };
-  }
-  if (solve(puzzle.regions, next, 1).length === 0) {
-    return { message: 'Invalid mark: it leaves no possible solution.' };
-  }
-  return { state: next };
-}
-
-/**
- * Summarizes progress for the status card.
- *
- * @param {Puzzle} puzzle
- * @param {BoardState} state
- * @returns {Status}
- */
-export function getStatus(puzzle, state) {
-  if (isEmpty(state)) {
-    return {
-      kind: 'ready',
-      title: 'Ready',
-      text: 'Cross off impossible squares, then place marks.',
-    };
-  }
-  if (solve(puzzle.regions, state, 1).length === 0) {
-    return {
-      kind: 'impossible',
-      title: 'No solution',
-      text: 'One or more cross-offs made this state impossible. Undo them.',
-    };
-  }
-  if (state.marked.size === puzzle.size) {
-    return {
-      kind: 'solved',
-      title: 'Solved!',
-      text: 'Every row, column, and color has exactly one mark.',
-    };
-  }
-  const crossed = state.crossed.size;
-  return {
-    kind: 'progress',
-    title: `${state.marked.size} of ${puzzle.size} marks placed`,
-    text: `${crossed} ${crossed === 1 ? 'square' : 'squares'} crossed off.`,
-  };
-}
-
-/**
- * Toast text for the Check button.
- *
- * @param {Puzzle} puzzle
- * @param {BoardState} state
- * @returns {string}
- */
-export function checkMessage(puzzle, state) {
-  const { kind } = getStatus(puzzle, state);
-  if (kind === 'solved') return 'Solved! Every row, column, and color has exactly one mark.';
-  if (kind === 'impossible') return 'Something’s off: the current cross-offs leave no solution.';
-  return 'No mistakes so far.';
 }

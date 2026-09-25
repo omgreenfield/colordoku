@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { emptyState, setCrossed } from '../site/js/game/game.js';
 import { generatePuzzle } from '../site/js/game/generator.js';
 import { effectiveState, startAttempt } from '../site/js/game/attempt.js';
-import { applyHint, getHint } from '../site/js/game/hints.js';
+import { getHint } from '../site/js/game/hints.js';
 import { createRandom } from '../site/js/game/random.js';
 import { cellKey } from '../site/js/game/rules.js';
 import { SMALL_PUZZLE, stateOf } from './fixtures.js';
@@ -52,30 +52,6 @@ test('every hint refuses an impossible board', () => {
       message: 'Current cross-offs leave no solution. Undo at least one.',
     });
   }
-});
-
-test('applyHint crosses off every target', () => {
-  /** @type {Hint} */
-  const hint = {
-    title: 'Safe cross-offs',
-    text: '',
-    targets: [
-      [0, 0],
-      [0, 2],
-    ],
-    action: 'cross',
-  };
-  const result = applyHint(SMALL_PUZZLE, emptyState(), hint);
-  assert.ok('state' in result);
-  assert.deepEqual([...result.state.crossed], ['0,0', '0,2']);
-});
-
-test('applyHint leaves an already-marked target marked', () => {
-  /** @type {Hint} */
-  const hint = { title: 'Guaranteed mark', text: '', targets: [[0, 1]], action: 'mark' };
-  const result = applyHint(SMALL_PUZZLE, stateOf({ marked: [[0, 1]] }), hint);
-  assert.ok('state' in result);
-  assert.deepEqual([...result.state.marked], ['0,1']);
 });
 
 /** A board after the red mark at row 1, column 2 and every square it rules out, plus (3, 3), are crossed off. */

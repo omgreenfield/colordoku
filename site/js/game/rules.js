@@ -98,25 +98,3 @@ export function marksConflict(regions, first, second) {
     touches(first, second)
   );
 }
-
-/**
- * Keys of every mark that breaks a rule with another mark.
- *
- * @param {number[][]} regions
- * @param {Iterable<string>} marked
- * @returns {Set<string>}
- */
-export function conflictingMarks(regions, marked) {
-  const keys = [...marked];
-  /** @type {Set<string>} */
-  const conflicts = new Set();
-  keys.forEach((first, index) => {
-    for (const second of keys.slice(index + 1)) {
-      if (marksConflict(regions, parseKey(first), parseKey(second))) {
-        conflicts.add(first);
-        conflicts.add(second);
-      }
-    }
-  });
-  return conflicts;
-}

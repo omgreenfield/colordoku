@@ -101,9 +101,49 @@
   animation: hint-pulse 1.4s ease-in-out infinite;
 }
 
-.cell.conflict {
-  box-shadow: inset 0 0 0 4px var(--bad);
-  animation: none;
+/* Mistakes come after :hover so the red tint survives hovering. */
+.cell.mistake {
+  background: color-mix(in srgb, var(--bad) 22%, var(--region-color));
+  animation: mistake-shake 0.3s ease-in-out;
+}
+
+.cell.mistake::before,
+.cell.mistake::after {
+  z-index: 1;
+  content: '';
+  position: absolute;
+  width: 46%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bad);
+  transform: rotate(45deg);
+}
+
+.cell.mistake::after {
+  transform: rotate(-45deg);
+}
+
+@keyframes mistake-shake {
+  25% {
+    translate: -3px 0;
+  }
+
+  75% {
+    translate: 3px 0;
+  }
+}
+
+.cell.revealed .mark {
+  display: grid;
+  opacity: 0.45;
+}
+
+.board.locked .cell {
+  cursor: default;
+}
+
+.board.locked .cell:hover {
+  box-shadow: none;
 }
 
 @keyframes hint-pulse {

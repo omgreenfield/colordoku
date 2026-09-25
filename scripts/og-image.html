@@ -80,7 +80,10 @@
           }
         }
       }
-      board.update({ crossed, marked }, { conflicts: new Set(), hintTargets: new Set() });
+      board.update(
+        { crossed, marked },
+        { hintTargets: new Set(), mistakes: new Set(), revealed: new Set(), locked: false },
+      );
       document.body.dataset.ready = 'true';
     </script>
   </body>

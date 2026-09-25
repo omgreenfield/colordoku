@@ -90,29 +90,33 @@ export class Board {
   }
 
   /**
-   * Shows crosses, marks, conflicts, and hint targets, and describes each cell for screen readers.
+   * Shows crosses, marks, mistakes, the revealed solution, and hint targets, and describes each
+   * cell for screen readers.
    *
    * @param {BoardState} state
-   * @param {{ conflicts: Set<string>, hintTargets: Set<string> }} decorations
+   * @param {{ hintTargets: Set<string>, mistakes: Set<string>, revealed: Set<string>, locked: boolean }} decorations
    */
-  update(state, { conflicts, hintTargets }) {
+  update(state, { hintTargets, mistakes, revealed, locked }) {
     const puzzle = this.#puzzle;
     if (!puzzle) return;
+    this.#element.classList.toggle('locked', locked);
     this.#cells.forEach((rowCells, row) => {
       rowCells.forEach((cell, column) => {
         const key = cellKey(row, column);
-        const crossed = state.crossed.has(key);
         const marked = state.marked.has(key);
-        const conflict = conflicts.has(key);
+        const mistake = mistakes.has(key);
+        const crossed = state.crossed.has(key) && !mistake;
+        const shown = revealed.has(key);
         const hinted = hintTargets.has(key);
         cell.classList.toggle('crossed', crossed);
         cell.classList.toggle('marked', marked);
-        cell.classList.toggle('conflict', conflict);
+        cell.classList.toggle('mistake', mistake);
+        cell.classList.toggle('revealed', shown);
         cell.classList.toggle('hint-target', hinted);
         const details = [
           `Row ${row + 1}, column ${column + 1}, ${REGION_NAMES[puzzle.regions[row][column]]}`,
-          marked ? 'marked' : crossed ? 'crossed off' : '',
-          conflict ? 'conflict' : '',
+          marked ? 'marked' : mistake ? 'wrong mark' : crossed ? 'crossed off' : '',
+          shown ? 'solution' : '',
           hinted ? 'hint' : '',
         ];
         cell.setAttribute('aria-label', details.filter(Boolean).join(', '));
@@ -177,7 +181,9 @@ export class Board {
   #onKeyDown(event) {
     const cell = this.#cellAt(event.target);
     const puzzle = this.#puzzle;
-    if (!cell || !puzzle || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (!cell || !puzzle || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
     const [row, column] = cellOf(cell);
     const last = puzzle.size - 1;
     /** @type {Record<string, Cell>} */

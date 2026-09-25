@@ -48,14 +48,24 @@
           </div>
         </div>
         <div class="new-controls">
-          <label for="size">Board</label>
-          <select id="size" autocomplete="off">
+          <label for="size">Board <kbd class="hotkey" data-hotkey-label="cycleSize"></kbd></label>
+          <select id="size" autocomplete="off" data-hotkey="cycleSize">
             <option value="6">6 × 6</option>
             <option value="7" selected>7 × 7</option>
             <option value="8">8 × 8</option>
             <option value="9">9 × 9</option>
           </select>
-          <button id="new-game" class="primary" type="button">New game</button>
+          <label for="lives">Lives <kbd class="hotkey" data-hotkey-label="cycleLives"></kbd></label>
+          <select id="lives" autocomplete="off" data-hotkey="cycleLives">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+          <button id="new-game" class="primary" type="button" data-hotkey="newGame">
+            New game <kbd class="hotkey" data-hotkey-label="newGame"></kbd>
+          </button>
         </div>
       </header>
       <main class="main">
@@ -73,26 +83,41 @@
           <section class="card">
             <div id="status" class="status" aria-live="polite">
               <div id="status-icon" class="status-icon" aria-hidden="true">i</div>
-              <div>
+              <div class="status-body">
                 <strong id="status-title">Ready</strong>
-                <span id="status-text">Cross off impossible squares, then place marks.</span>
+                <span id="status-text" class="status-text"
+                  >Cross off impossible squares, then place marks.</span
+                >
               </div>
+              <div id="lives-left" class="lives" role="img" aria-label="3 of 3 lives left"></div>
             </div>
           </section>
           <section class="card">
             <h2>Input</h2>
             <div class="mode-grid">
-              <button class="mode-button" type="button" data-mode="cross" aria-pressed="true">
-                × Cross off
+              <button
+                class="mode-button"
+                type="button"
+                data-mode="cross"
+                data-hotkey="crossMode"
+                aria-pressed="true"
+              >
+                × Cross off <kbd class="hotkey" data-hotkey-label="crossMode"></kbd>
               </button>
-              <button class="mode-button" type="button" data-mode="mark" aria-pressed="false">
-                ● Place mark
+              <button
+                class="mode-button"
+                type="button"
+                data-mode="mark"
+                data-hotkey="markMode"
+                aria-pressed="false"
+              >
+                ● Place mark <kbd class="hotkey" data-hotkey-label="markMode"></kbd>
               </button>
             </div>
             <p class="input-help">
               Drag to cross off. Double-click, double-tap, or right-click to place a mark.
             </p>
-            <ul class="shortcuts" aria-label="Keyboard shortcuts">
+            <ul class="shortcuts" aria-label="Board keys">
               <li>
                 <span class="keys"
                   ><span class="kbd">←</span><span class="kbd">↑</span><span class="kbd">↓</span
@@ -112,43 +137,50 @@
                 <span class="keys"><span class="kbd">Enter</span> <span class="kbd">M</span></span>
                 Place mark
               </li>
-              <li>
-                <span class="keys"><span class="kbd">⌘/Ctrl</span> <span class="kbd">Z</span></span>
-                Undo
-              </li>
-              <li>
-                <span class="keys"
-                  ><span class="kbd">⌘/Ctrl</span> <span class="kbd">⇧</span>
-                  <span class="kbd">Z</span></span
-                >
-                Redo
-              </li>
             </ul>
           </section>
           <section class="card">
             <h2>Game</h2>
             <div class="action-grid">
-              <button id="undo" type="button" disabled>↶ Undo</button>
-              <button id="redo" type="button" disabled>↷ Redo</button>
-              <button id="restart" type="button">Restart</button>
-              <button id="check" type="button">Check</button>
-              <button id="share" type="button">Share puzzle</button>
+              <button id="undo" type="button" data-hotkey="undo" disabled>
+                ↶ Undo <kbd class="hotkey" data-hotkey-label="undo"></kbd>
+              </button>
+              <button id="redo" type="button" data-hotkey="redo" disabled>
+                ↷ Redo <kbd class="hotkey" data-hotkey-label="redo"></kbd>
+              </button>
+              <button id="restart" type="button" data-hotkey="restart">
+                <span id="restart-label">Restart</span>
+                <kbd class="hotkey" data-hotkey-label="restart"></kbd>
+              </button>
+              <button id="check" type="button" data-hotkey="check">
+                Check <kbd class="hotkey" data-hotkey-label="check"></kbd>
+              </button>
+              <button id="share" type="button" data-hotkey="share">
+                Share <kbd class="hotkey" data-hotkey-label="share"></kbd>
+              </button>
+              <button id="sound" type="button" data-hotkey="toggleSound">
+                <span id="sound-label">Sound on</span>
+                <kbd class="hotkey" data-hotkey-label="toggleSound"></kbd>
+              </button>
             </div>
           </section>
           <section class="card">
             <h2>Hints</h2>
             <div class="hint-list">
-              <button class="hint-button" type="button" data-hint="mark">
+              <button class="hint-button" type="button" data-hotkey="hintMark">
                 <span class="icon" aria-hidden="true">●</span>
                 <span>Mark a square<small>Place one guaranteed mark</small></span>
+                <kbd class="hotkey" data-hotkey-label="hintMark"></kbd>
               </button>
-              <button class="hint-button" type="button" data-hint="cross">
+              <button class="hint-button" type="button" data-hotkey="hintCross">
                 <span class="icon" aria-hidden="true">×3</span>
                 <span>Cross off squares<small>Eliminate up to three</small></span>
+                <kbd class="hotkey" data-hotkey-label="hintCross"></kbd>
               </button>
-              <button class="hint-button" type="button" data-hint="reason">
+              <button class="hint-button" type="button" data-hotkey="hintReason">
                 <span class="icon" aria-hidden="true">💡</span>
                 <span>Explain next step<small>Show a logical deduction</small></span>
+                <kbd class="hotkey" data-hotkey-label="hintReason"></kbd>
               </button>
             </div>
           </section>
@@ -157,9 +189,40 @@
             <p id="hint-text"></p>
             <p id="hint-targets" class="targets"></p>
             <div class="hint-actions">
-              <button id="apply-hint" class="primary" type="button">Apply</button>
-              <button id="dismiss-hint" type="button">I’ll do it</button>
+              <button id="apply-hint" class="primary" type="button" data-hotkey="applyHint">
+                <span id="apply-hint-label">Apply</span>
+                <kbd class="hotkey" data-hotkey-label="applyHint"></kbd>
+              </button>
+              <button id="dismiss-hint" type="button" data-hotkey="dismissHint">
+                I’ll do it <kbd class="hotkey" data-hotkey-label="dismissHint"></kbd>
+              </button>
             </div>
+          </section>
+          <section class="card">
+            <h2>Record</h2>
+            <dl class="record-grid">
+              <div>
+                <dt>Wins</dt>
+                <dd id="record-wins">0</dd>
+              </div>
+              <div>
+                <dt>Losses</dt>
+                <dd id="record-losses">0</dd>
+              </div>
+              <div>
+                <dt>Win rate</dt>
+                <dd id="record-rate">–</dd>
+              </div>
+              <div>
+                <dt>Best score</dt>
+                <dd id="record-best">0</dd>
+              </div>
+            </dl>
+            <div class="record-footer">
+              <span>Total score <strong id="record-total">0</strong></span>
+              <button id="reset-record" type="button">Reset record</button>
+            </div>
+            <p class="record-note">Saved in this browser only.</p>
           </section>
           <section class="card">
             <h2>Rules</h2>
@@ -168,6 +231,7 @@
               <li>Exactly one mark in every column.</li>
               <li>Exactly one mark in every color.</li>
               <li>Marks cannot touch, even diagonally.</li>
+              <li>Every wrong mark costs a life.</li>
             </ul>
           </section>
         </aside>
