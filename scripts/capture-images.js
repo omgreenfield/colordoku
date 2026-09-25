@@ -15,7 +15,7 @@ const CHROME_PATH =
 /** The puzzle the README screenshots show. */
 const SCREENSHOT_SEARCH = '?size=8&seed=colordoku';
 /** Hints applied, in order, to reach a mid-game board for the screenshots. */
-const SCREENSHOT_HINTS = ['mark', 'mark', 'mark', 'reason', 'reason'];
+const SCREENSHOT_HINTS = ['hintMark', 'hintMark', 'hintMark', 'hintReason', 'hintReason'];
 /** @type {Record<string, string>} */
 const CONTENT_TYPES = {
   '.html': 'text/html',
@@ -74,9 +74,23 @@ try {
   await page.goto(`${server.origin}/site/${SCREENSHOT_SEARCH}`);
   await page.waitForSelector('.cell[aria-label]');
   for (const hint of SCREENSHOT_HINTS) {
-    await page.click(`[data-hint="${hint}"]`);
+    await page.click(`[data-hotkey="${hint}"]`);
     await page.click('#apply-hint');
   }
+  const wrong = await page.evaluate(
+    async (modulePath, search) => {
+      const { generatePuzzle } = await import(modulePath);
+      const params = new URLSearchParams(search);
+      const puzzle = generatePuzzle(Number(params.get('size')), params.get('seed'));
+      const row = puzzle.size - 1;
+      return [row, puzzle.solution[row] === 0 ? 1 : 0];
+    },
+    '/site/js/game/generator.js',
+    SCREENSHOT_SEARCH,
+  );
+  await page.click(`.cell[data-row="${wrong[0]}"][data-column="${wrong[1]}"]`, { button: 'right' });
+  // Let the wrong-square toast fade and the shake finish.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
   await page.mouse.move(0, 0);
   await page.evaluate(() => window.scrollTo(0, 0));
   for (const scheme of ['light', 'dark']) {
