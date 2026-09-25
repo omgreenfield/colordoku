@@ -51,18 +51,19 @@ export function sameState(first, second) {
 }
 
 /**
- * Crosses off or clears cells, leaving marked cells alone.
+ * Crosses off or clears cells, leaving marked cells and any cells in `skip` alone.
  *
  * @param {BoardState} state
  * @param {Cell[]} cells
  * @param {boolean} crossed
+ * @param {ReadonlySet<string>} [skip] Cells to leave untouched, such as mistakes
  * @returns {BoardState}
  */
-export function setCrossed(state, cells, crossed) {
+export function setCrossed(state, cells, crossed, skip = new Set()) {
   const next = cloneState(state);
   for (const [row, column] of cells) {
     const key = cellKey(row, column);
-    if (next.marked.has(key)) continue;
+    if (next.marked.has(key) || skip.has(key)) continue;
     if (crossed) next.crossed.add(key);
     else next.crossed.delete(key);
   }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { emptyState, setCrossed } from '../site/js/game/game.js';
 import { generatePuzzle } from '../site/js/game/generator.js';
+import { effectiveState, startAttempt } from '../site/js/game/attempt.js';
 import { applyHint, getHint } from '../site/js/game/hints.js';
 import { createRandom } from '../site/js/game/random.js';
 import { cellKey } from '../site/js/game/rules.js';
@@ -168,4 +169,15 @@ test('hints never cross off a solution square or mark anything else', () => {
       }
     }
   }
+});
+
+test('hints treat mistakes as crossed off', () => {
+  const attempt = { ...startAttempt(3), mistakes: new Set(['0,0', '0,2']) };
+  const result = getHint(SMALL_PUZZLE, effectiveState(emptyState(), attempt), 'cross');
+  assert.ok('hint' in result);
+  assert.deepEqual(result.hint.targets, [
+    [0, 3],
+    [1, 0],
+    [1, 1],
+  ]);
 });

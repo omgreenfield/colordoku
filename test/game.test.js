@@ -96,3 +96,16 @@ test('sameState compares both sets', () => {
   assert.ok(sameState(stateOf({ crossed: [[0, 0]] }), stateOf({ crossed: [[0, 0]] })));
   assert.ok(!sameState(stateOf({ crossed: [[0, 0]] }), stateOf({ marked: [[0, 0]] })));
 });
+
+test('setCrossed skips the cells it is told to', () => {
+  const next = setCrossed(
+    emptyState(),
+    [
+      [0, 0],
+      [0, 1],
+    ],
+    true,
+    new Set(['0,0']),
+  );
+  assert.deepEqual([...next.crossed], ['0,1']);
+});
