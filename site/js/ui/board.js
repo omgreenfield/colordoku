@@ -33,7 +33,12 @@ export class Board {
   #cells = [];
   /** @type {Cell} */
   #focus = [0, 0];
-  /** @type {{ pointerId: number, key: string } | null} */
+  /**
+   * The press in progress and the last cell it reported, or `null` for that cell after the pointer
+   * left the board, so re-entering elsewhere doesn't fill in the cells between.
+   *
+   * @type {{ pointerId: number, key: string | null } | null}
+   */
   #press = null;
   /** @type {{ key: string, time: number } | null} */
   #lastTap = null;
@@ -128,6 +133,9 @@ export class Board {
     this.#lastTap = double ? null : { key, time: event.timeStamp };
     this.#press = { pointerId: event.pointerId, key };
     this.#setRoving(cell);
+    // preventDefault above also stops the browser from focusing the cell, so focus it here;
+    // otherwise Enter or Space would go to whatever button was clicked last.
+    cell.focus({ preventScroll: true, focusVisible: false });
     this.#handlers.onPressStart(cellOf(cell), double);
   }
 
@@ -135,12 +143,19 @@ export class Board {
   #onPointerMove(event) {
     const press = this.#press;
     if (!press || event.pointerId !== press.pointerId) return;
-    const cell = this.#cellAt(document.elementFromPoint(event.clientX, event.clientY));
+    const bounds = this.#element.getBoundingClientRect();
+    const { clientX: x, clientY: y } = event;
+    if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) {
+      press.key = null;
+      return;
+    }
+    const cell = this.#cellAt(document.elementFromPoint(x, y));
     if (!cell || keyOf(cell) === press.key) return;
-    const from = parseKey(press.key);
+    const passed =
+      press.key === null ? [cellOf(cell)] : cellsBetween(parseKey(press.key), cellOf(cell));
     press.key = keyOf(cell);
     this.#lastTap = null;
-    for (const passed of cellsBetween(from, cellOf(cell))) this.#handlers.onPressMove(passed);
+    for (const next of passed) this.#handlers.onPressMove(next);
   }
 
   /** @param {PointerEvent} event */

@@ -83,3 +83,12 @@ test('generatePuzzle rebuilds the same puzzle from the same seed', () => {
   assert.deepEqual(generatePuzzle(8, 'repeat'), generatePuzzle(8, 'repeat'));
   assert.notDeepEqual(generatePuzzle(8, 'repeat')?.regions, generatePuzzle(8, 'repeaz')?.regions);
 });
+
+test('region colors do not reveal which row holds their mark', () => {
+  const revealing = SEEDS.filter((seed) => {
+    const puzzle = generatePuzzle(7, seed);
+    assert.ok(puzzle);
+    return puzzle.solution.every((column, row) => puzzle.regions[row][column] === row);
+  });
+  assert.deepEqual(revealing, []);
+});

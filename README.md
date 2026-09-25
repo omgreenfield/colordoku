@@ -30,7 +30,7 @@
 
 ## How to play
 
-The board is split into colored regions, one for each row. Place marks so that:
+The board is split into as many colored regions as it has rows. Place marks so that:
 
 - every row has exactly one mark
 - every column has exactly one mark

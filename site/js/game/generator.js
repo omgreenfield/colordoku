@@ -116,7 +116,19 @@ export function generatePuzzle(size, seed) {
     const regions = solution && growRegions(size, solution, random);
     if (!regions) continue;
     const solutions = solve(regions, undefined, 2);
-    if (solutions.length === 1) return { size, seed, regions, solution: solutions[0] };
+    if (solutions.length !== 1) continue;
+    // growRegions numbers each region by its solution row, and the number picks the color, so
+    // relabel them randomly or every color would give away which row holds its mark.
+    const labels = shuffle(
+      Array.from({ length: size }, (_, region) => region),
+      random,
+    );
+    return {
+      size,
+      seed,
+      regions: regions.map((row) => row.map((region) => labels[region])),
+      solution: solutions[0],
+    };
   }
   return null;
 }
