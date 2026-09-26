@@ -39,7 +39,7 @@ The board is split into as many colored regions as it has rows. Place marks so t
 
 Every puzzle has exactly one solution. Cross off squares that can't hold a mark, then place marks where only one choice is left.
 
-You start each puzzle with 3 lives (choose 1–5 with the Lives menu). Every wrong mark costs a life and stays on the board in red. Run out and the solution is revealed.
+You start each puzzle with 3 lives (choose 1–5 with the Lives menu). Every wrong mark costs a life and stays on the board in red. Run out and the solution is revealed. Once you've won or lost a puzzle, replaying it (with **Try again** or its link) is a practice round that doesn't count toward your record.
 
 ## Controls
 
@@ -70,7 +70,7 @@ Every button also has a Shift shortcut, shown on the button itself:
 
 - Fresh puzzles in four sizes, from 6×6 to 9×9, each with exactly one solution
 - Lives and scores: every wrong mark costs a life, and a win scores 100 × board size × the share of lives you kept (a flawless 8×8 is 800)
-- A record of wins, losses, win rate, and best and total score, saved in your browser (it stays on this device, and clearing site data resets it)
+- A record of wins, losses, win rate, and best and total score, saved in your browser (it stays on this device, and clearing site data resets it). Replays of finished puzzles are practice, so a revealed solution can't earn free points
 - Soft synthesized sound effects, with a mute toggle
 - Keyboard shortcuts for every control
 - Shareable puzzle links: every puzzle has a seed in its URL, so `?size=8&seed=k3f9x2` rebuilds the same board on any device

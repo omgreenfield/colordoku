@@ -4,13 +4,14 @@ import { solve } from './solver.js';
 
 /**
  * One try at one puzzle: lives, mistakes, and outcome. It lives outside the undo history, so undo
- * and Restart can never give a life back.
+ * and Restart can never give a life back. A practice try replays a puzzle whose solution the player
+ * has already seen, by winning or losing it, so it doesn't count toward the record.
  *
  * @typedef {import('./rules.js').BoardState} BoardState
  * @typedef {import('./rules.js').Cell} Cell
  * @typedef {import('./rules.js').Puzzle} Puzzle
  * @typedef {import('./hints.js').Hint} Hint
- * @typedef {{ livesStart: number, livesLeft: number, mistakes: Set<string>, outcome: 'playing' | 'won' | 'lost' }} Attempt
+ * @typedef {{ livesStart: number, livesLeft: number, mistakes: Set<string>, outcome: 'playing' | 'won' | 'lost', practice: boolean }} Attempt
  * @typedef {'placed' | 'removed' | 'mistake' | 'won' | 'lost' | 'crossed' | 'ignored'} MoveEvent
  * @typedef {{ board: BoardState, attempt: Attempt, event: MoveEvent }} MoveResult
  * @typedef {{ kind: 'ready' | 'progress' | 'impossible' | 'solved' | 'lost', title: string, text: string }} Status
@@ -23,10 +24,11 @@ export const DEFAULT_LIVES = 3;
 
 /**
  * @param {number} lives
+ * @param {boolean} [practice] Whether this replays a puzzle already finished
  * @returns {Attempt}
  */
-export function startAttempt(lives) {
-  return { livesStart: lives, livesLeft: lives, mistakes: new Set(), outcome: 'playing' };
+export function startAttempt(lives, practice = false) {
+  return { livesStart: lives, livesLeft: lives, mistakes: new Set(), outcome: 'playing', practice };
 }
 
 /**
@@ -127,7 +129,14 @@ export function scoreFor(size, livesLeft, livesStart) {
  * @returns {Status}
  */
 export function getStatus(puzzle, board, attempt) {
-  const { livesLeft, livesStart, outcome } = attempt;
+  const { livesLeft, livesStart, outcome, practice } = attempt;
+  if (outcome === 'won' && practice) {
+    return {
+      kind: 'solved',
+      title: 'Solved!',
+      text: 'Replays don’t score. Start a new game to earn points.',
+    };
+  }
   if (outcome === 'won') {
     const score = scoreFor(puzzle.size, livesLeft, livesStart);
     return {
@@ -144,11 +153,13 @@ export function getStatus(puzzle, board, attempt) {
     };
   }
   if (isEmpty(board) && attempt.mistakes.size === 0) {
-    return {
-      kind: 'ready',
-      title: 'Ready',
-      text: 'Cross off impossible squares, then place marks.',
-    };
+    return practice
+      ? {
+          kind: 'ready',
+          title: 'Practice round',
+          text: 'You’ve finished this puzzle before, so this try won’t count toward your record.',
+        }
+      : { kind: 'ready', title: 'Ready', text: 'Cross off impossible squares, then place marks.' };
   }
   if (solve(puzzle.regions, effectiveState(board, attempt), 1).length === 0) {
     return {

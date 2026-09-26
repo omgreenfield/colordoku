@@ -46,7 +46,9 @@ test('lives settings default to 3 of 1–5', () => {
     livesLeft: 4,
     mistakes: new Set(),
     outcome: 'playing',
+    practice: false,
   });
+  assert.equal(startAttempt(3, true).practice, true);
 });
 
 test('a correct mark is placed and clears its cross', () => {
@@ -196,4 +198,19 @@ test('checkMessage summarizes the board', () => {
     checkMessage(SMALL_PUZZLE, emptyState(), lost),
     'Out of lives. Try again or start a new game.',
   );
+});
+
+test('a practice round says so before the first move and scores nothing when solved', () => {
+  const practice = startAttempt(3, true);
+  assert.deepEqual(getStatus(SMALL_PUZZLE, emptyState(), practice), {
+    kind: 'ready',
+    title: 'Practice round',
+    text: 'You’ve finished this puzzle before, so this try won’t count toward your record.',
+  });
+  const won = { ...practice, outcome: /** @type {const} */ ('won') };
+  assert.deepEqual(getStatus(SMALL_PUZZLE, THREE_MARKS, won), {
+    kind: 'solved',
+    title: 'Solved!',
+    text: 'Replays don’t score. Start a new game to earn points.',
+  });
 });

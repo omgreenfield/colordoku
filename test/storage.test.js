@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { RECORD_KEY, parseSettings, saveResult } from '../site/js/ui/storage.js';
+import {
+  FINISHED_KEY,
+  RECORD_KEY,
+  parseSettings,
+  readFinished,
+  saveFinished,
+  saveResult,
+} from '../site/js/ui/storage.js';
 
 test('parseSettings falls back to 3 lives with sound on', () => {
   assert.deepEqual(parseSettings(null), { lives: 3, muted: false });
@@ -44,4 +51,11 @@ test('saveResult adds to the record saved now, so another tab’s results surviv
   const record = saveResult({ won: false, score: 0 });
   assert.deepEqual(record, { wins: 1, losses: 1, totalScore: 600, bestScore: 600 });
   assert.deepEqual(JSON.parse(store.get(RECORD_KEY) ?? ''), record);
+});
+
+test('saveFinished adds to the puzzles saved now, so another tab’s puzzles survive', (t) => {
+  const store = fakeStorage(t, { [FINISHED_KEY]: JSON.stringify(['8:a']) });
+  saveFinished('6:b');
+  assert.deepEqual(JSON.parse(store.get(FINISHED_KEY) ?? ''), ['8:a', '6:b']);
+  assert.deepEqual(readFinished(), ['8:a', '6:b']);
 });

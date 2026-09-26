@@ -17,7 +17,7 @@ import { generatePuzzle } from './game/generator.js';
 import { getHint } from './game/hints.js';
 import { UndoHistory } from './game/history.js';
 import { randomSeed } from './game/random.js';
-import { emptyRecord, parseRecord } from './game/record.js';
+import { emptyRecord, parseRecord, puzzleId } from './game/record.js';
 import { DEFAULT_SIZE, SIZES, cellKey } from './game/rules.js';
 import { Board } from './ui/board.js';
 import { requireElement } from './ui/dom.js';
@@ -36,7 +36,9 @@ import {
   RECORD_KEY,
   SETTINGS_KEY,
   parseSettings,
+  readFinished,
   readStored,
+  saveFinished,
   saveResult,
   writeStored,
 } from './ui/storage.js';
@@ -85,6 +87,8 @@ const modeButtons = /** @type {NodeListOf<HTMLButtonElement>} */ (
 const settings = parseSettings(readStored(SETTINGS_KEY));
 let record = parseRecord(readStored(RECORD_KEY));
 const sounds = createSounds({ muted: settings.muted });
+/** Puzzles finished in this tab, so replays stay practice even when storage is blocked. */
+const finishedHere = new Set();
 
 /** @type {Puzzle | null} */
 let puzzle = null;
@@ -259,6 +263,14 @@ function finishAttempt(won) {
   if (!puzzle) return;
   pendingHint = null;
   renderHint(null);
+  // Another tab may have finished this puzzle since this try began, so check again.
+  if (seenSolution(puzzle)) attempt = { ...attempt, practice: true };
+  finishedHere.add(puzzleId(puzzle));
+  saveFinished(puzzleId(puzzle));
+  if (attempt.practice) {
+    showToast(won ? 'Solved again. Replays don’t score.' : 'Out of lives. The solution is shown.');
+    return;
+  }
   const score = won ? scoreFor(puzzle.size, attempt.livesLeft, attempt.livesStart) : 0;
   record = saveResult({ won, score });
   renderRecord(record);
@@ -324,9 +336,28 @@ function redo() {
   if (next) restore(next, 'redo');
 }
 
-/** Starts a fresh attempt at the current puzzle with the current Lives setting. */
+/**
+ * Whether the player has already seen this puzzle's solution by winning or losing it, in this tab
+ * or any other.
+ *
+ * @param {Puzzle} shown
+ * @returns {boolean}
+ */
+function seenSolution(shown) {
+  const id = puzzleId(shown);
+  return finishedHere.has(id) || readFinished().includes(id);
+}
+
+/**
+ * Starts a fresh attempt at the current puzzle with the current Lives setting. A puzzle already
+ * finished replays as practice, so seeing the solution can't earn a free win.
+ */
 function beginAttempt() {
-  attempt = startAttempt(settings.lives);
+  attempt = startAttempt(settings.lives, puzzle !== null && seenSolution(puzzle));
+  if (puzzle) {
+    const { seed, size } = puzzle;
+    caption.textContent = `Puzzle ${seed} · ${size}×${size}${attempt.practice ? ' · Practice' : ''}`;
+  }
   state = emptyState();
   moves.clear();
   stroke = null;
@@ -384,7 +415,6 @@ function startGame(size, seed, { retry = true, announce = false } = {}) {
     }
     puzzle = next;
     sizeSelect.value = String(size);
-    caption.textContent = `Puzzle ${seed} · ${size}×${size}`;
     window.history.replaceState(null, '', puzzleSearch(size, seed));
     board.setPuzzle(next);
     beginAttempt();

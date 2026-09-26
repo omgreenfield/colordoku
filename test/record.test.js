@@ -1,6 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { addResult, emptyRecord, parseRecord, winRate } from '../site/js/game/record.js';
+import {
+  FINISHED_LIMIT,
+  addFinished,
+  addResult,
+  emptyRecord,
+  parseFinished,
+  parseRecord,
+  puzzleId,
+  winRate,
+} from '../site/js/game/record.js';
+import { SMALL_PUZZLE } from './fixtures.js';
 
 test('a win adds to wins, total, and best score', () => {
   const record = addResult(addResult(emptyRecord(), { won: true, score: 533 }), {
@@ -34,4 +44,23 @@ test('parseRecord keeps valid counts and zeroes everything else', () => {
     totalScore: 0,
     bestScore: 0,
   });
+});
+
+test('puzzleId names a puzzle by size and seed', () => {
+  assert.equal(puzzleId({ ...SMALL_PUZZLE, size: 8, seed: 'k3f9x2' }), '8:k3f9x2');
+});
+
+test('parseFinished keeps only puzzle ids', () => {
+  assert.deepEqual(parseFinished(null), []);
+  assert.deepEqual(parseFinished({ '8:a': true }), []);
+  assert.deepEqual(parseFinished(['8:a', 7, null, '6:b']), ['8:a', '6:b']);
+});
+
+test('addFinished moves a replayed puzzle to the end and forgets the oldest past the limit', () => {
+  assert.deepEqual(addFinished(['8:a', '6:b'], '8:a'), ['6:b', '8:a']);
+  const full = Array.from({ length: FINISHED_LIMIT }, (_, index) => `6:${index}`);
+  const next = addFinished(full, '9:new');
+  assert.equal(next.length, FINISHED_LIMIT);
+  assert.equal(next[0], '6:1');
+  assert.equal(next.at(-1), '9:new');
 });

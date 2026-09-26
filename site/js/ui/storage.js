@@ -1,5 +1,5 @@
 import { DEFAULT_LIVES, LIVES_CHOICES } from '../game/attempt.js';
-import { addResult, parseRecord } from '../game/record.js';
+import { addFinished, addResult, parseFinished, parseRecord } from '../game/record.js';
 
 /**
  * @typedef {{ lives: number, muted: boolean }} Settings
@@ -8,6 +8,7 @@ import { addResult, parseRecord } from '../game/record.js';
 
 export const SETTINGS_KEY = 'colordoku.settings';
 export const RECORD_KEY = 'colordoku.record';
+export const FINISHED_KEY = 'colordoku.finished';
 
 /**
  * Reads a JSON value saved in this browser.
@@ -66,4 +67,23 @@ export function saveResult(result) {
   const record = addResult(parseRecord(readStored(RECORD_KEY)), result);
   writeStored(RECORD_KEY, record);
   return record;
+}
+
+/**
+ * The puzzles finished in this browser, oldest first.
+ *
+ * @returns {string[]}
+ */
+export function readFinished() {
+  return parseFinished(readStored(FINISHED_KEY));
+}
+
+/**
+ * Remembers a finished puzzle. It reads the saved list fresh, so puzzles another tab finished in
+ * the meantime survive.
+ *
+ * @param {string} id
+ */
+export function saveFinished(id) {
+  writeStored(FINISHED_KEY, addFinished(readFinished(), id));
 }
